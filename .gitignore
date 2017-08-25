@@ -1,0 +1,4 @@
+#Ignore in the project
+
+*.pyc
+.idea/
