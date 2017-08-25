@@ -48,6 +48,7 @@
 import sys
 from PyQt4 import QtCore, QtGui, Qt
 from scapy.all import *
+from scapy.layers import ipsec
 import thread
 
 class EH(QtGui.QDialog):
@@ -63,6 +64,7 @@ class EH(QtGui.QDialog):
     def __init__(self, ExtHdr):
         QtGui.QDialog.__init__(self)
         self.setWindowTitle("Extension Header")
+        self.resize(380, 400)
         self.ExtHdr = ExtHdr
         self.Label = QtGui.QLabel("Extension Header:", self)
         self.Label.move(5, 5)
@@ -71,6 +73,11 @@ class EH(QtGui.QDialog):
         self.ExtensionHdr.addItem('Destination Options')
         self.ExtensionHdr.addItem('Routing')
         self.ExtensionHdr.addItem('Fragmentation')
+        ## Update
+        self.ExtensionHdr.addItem("Authentication")
+        self.ExtensionHdr.addItem("Encapsulating Security Payload")
+        ##
+
         self.ExtensionHdr.setGeometry(QtCore.QRect(10, 30, 250, 31))
 
         ## Hop-By-Hop Header
@@ -167,13 +174,139 @@ class EH(QtGui.QDialog):
         self.connect(self.FragmentHdr_ID, QtCore.SIGNAL('textChanged(QString)'), self.slotMax2_32)
         self.FragmentHdr_M = QtGui.QCheckBox("Last Package", self.FragmentHdr)
         self.FragmentHdr_M.move(10, 160)
-        
+
+        #Update
+        # Authentication Header
+        self.AuthHdr = QtGui.QWidget(self)
+        self.AuthHdr.setGeometry(QtCore.QRect(0, 60, 360, 250))
+
+        self.AuthHdr_AlgoLabel = QtGui.QLabel("Authentication Algorithm", self.AuthHdr)
+        self.AuthHdr_AlgoLabel.move(5, 10)
+
+        self.AuthHdr_AlgoLine = QtGui.QComboBox(self.AuthHdr)
+        self.AuthHdr_AlgoLine.setGeometry(QtCore.QRect(10, 35, 150, 31))
+        self.AuthHdr_AlgoLine.addItem("NULL")
+        self.AuthHdr_AlgoLine.addItem('HMAC-SHA1-96')
+        self.AuthHdr_AlgoLine.addItem('SHA2-256-128')
+        self.AuthHdr_AlgoLine.addItem('SHA2-384-192')
+        self.AuthHdr_AlgoLine.addItem('SHA2-512-256')
+        self.AuthHdr_AlgoLine.addItem('HMAC-MD5-96')
+        self.AuthHdr_AlgoLine.addItem('AES-CMAC-96')
+
+        self.AuthHdr_KeyLabel = QtGui.QLabel("Authentication Key:", self.AuthHdr)
+        self.AuthHdr_KeyLabel.move(5, 80)
+
+        self.AuthHdr_KeyLine = QtGui.QComboBox(self.AuthHdr)
+        self.AuthHdr_KeyLine.setGeometry(QtCore.QRect(10, 105, 150, 30))
+        self.AuthHdr_KeyLine.setEditable(True)
+        self.AuthHdr_KeyLine.addItem('')
+        self.AuthHdr_KeyLine.addItem('secert key')
+        self.AuthHdr_KeyLine.addItem('sixteenbytes key')
+
+        self.AuthHdr_CheckTunnel = QtGui.QCheckBox("Tunnel Header", self.AuthHdr)
+        self.AuthHdr_CheckTunnel.move(10, 150)
+
+        self.AuthHdr_TunnelWidgt = QtGui.QWidget(self.AuthHdr)
+        self.AuthHdr_TunnelWidgt.setGeometry(QtCore.QRect(10, 160, 500, 300))
+
+        self.Tunnel_srcLabel = QtGui.QLabel("Source IP:", self.AuthHdr_TunnelWidgt)
+        self.Tunnel_srcLabel.move(5, 30)
+
+        self.Tunnel_dstLabel = QtGui.QLabel("Destination IP:", self.AuthHdr_TunnelWidgt)
+        self.Tunnel_dstLabel.move(5, 70)
+
+        self.Tunnel_srcLine = QtGui.QLineEdit(self.AuthHdr_TunnelWidgt)
+        self.Tunnel_srcLine.setGeometry(QtCore.QRect(100, 25, 250, 25))
+
+        self.Tunnel_dstLine = QtGui.QLineEdit(self.AuthHdr_TunnelWidgt)
+        self.Tunnel_dstLine.setGeometry(QtCore.QRect(100, 65, 250, 25))
+
+        self.AuthHdr_TunnelWidgt.setVisible(False)
+
+        self.connect(self.AuthHdr_CheckTunnel, QtCore.SIGNAL('clicked(bool)'), self.slot_AH_tunnel_header)
+
+        # Update
+        # ESP Header
+        self.ESPHdr = QtGui.QWidget(self)
+        self.ESPHdr.setGeometry(QtCore.QRect(0, 60, 360, 250))
+        self.ESP_AlgoLabel = QtGui.QLabel("Authentication Algorithm", self.ESPHdr)
+        self.ESP_AlgoLabel.move(5, 10)
+
+        self.ESP_AlgoLine = QtGui.QComboBox(self.ESPHdr)
+        self.ESP_AlgoLine.setGeometry(QtCore.QRect(10, 35, 150, 31))
+        self.ESP_AlgoLine.addItem("NULL")
+        self.ESP_AlgoLine.addItem('HMAC-SHA1-96')
+        self.ESP_AlgoLine.addItem('SHA2-256-128')
+        self.ESP_AlgoLine.addItem('SHA2-384-192')
+        self.ESP_AlgoLine.addItem('SHA2-512-256')
+        self.ESP_AlgoLine.addItem('HMAC-MD5-96')
+        self.ESP_AlgoLine.addItem('AES-CMAC-96')
+
+        self.ESP_KeyLabel = QtGui.QLabel("Authentication Key:", self.ESPHdr)
+        self.ESP_KeyLabel.move(5, 80)
+
+        self.ESP_KeyLine = QtGui.QComboBox(self.ESPHdr)
+        self.ESP_KeyLine.setGeometry(QtCore.QRect(10, 105, 150, 30))
+        self.ESP_KeyLine.setEditable(True)
+        self.ESP_KeyLine.addItem('')
+        self.ESP_KeyLine.addItem('secert key')
+        self.ESP_KeyLine.addItem('sixteenbytes key')
+
+        self.ESP_Encryp_AlgoLabel = QtGui.QLabel("Encryption Algorithms: ", self.ESPHdr)
+        self.ESP_Encryp_AlgoLabel.move(200, 10)
+
+        self.ESP_EncrypAlgoLine = QtGui.QComboBox(self.ESPHdr)
+        self.ESP_EncrypAlgoLine.setGeometry(QtCore.QRect(200, 35, 150, 31))
+        self.ESP_EncrypAlgoLine.addItem("NULL")
+        self.ESP_EncrypAlgoLine.addItem('AES-CBC')
+        self.ESP_EncrypAlgoLine.addItem('AES-GCM')
+        self.ESP_EncrypAlgoLine.addItem('DES')
+        self.ESP_EncrypAlgoLine.addItem('3DES')
+        self.ESP_EncrypAlgoLine.addItem('Blowfish')
+        self.ESP_EncrypAlgoLine.addItem('CAST')
+
+        self.ESP_Encryp_KeyLabel = QtGui.QLabel("Encryption Key:", self.ESPHdr)
+        self.ESP_Encryp_KeyLabel.move(200, 80)
+
+        self.ESP_Encryp_KeyLine = QtGui.QComboBox(self.ESPHdr)
+        self.ESP_Encryp_KeyLine.setGeometry(QtCore.QRect(200, 105, 150, 30))
+        self.ESP_Encryp_KeyLine.setEditable(True)
+        self.ESP_Encryp_KeyLine.addItem('')
+        self.ESP_Encryp_KeyLine.addItem('threedifferent8byteskeys')
+        self.ESP_Encryp_KeyLine.addItem('sixteenbytes key')
+        self.ESP_Encryp_KeyLine.addItem('8bytekey')
+        self.ESP_Encryp_KeyLine.addItem('16bytekey+4bytenonce')
+
+        self.ESP_CheckTunnel = QtGui.QCheckBox("Tunnel Header", self.ESPHdr)
+        self.ESP_CheckTunnel.move(10, 150)
+
+        self.ESP_TunnelWidgt = QtGui.QWidget(self.ESPHdr)
+        self.ESP_TunnelWidgt.setGeometry(QtCore.QRect(10, 160, 500, 300))
+
+        self.ESP_srcLabel = QtGui.QLabel("Source IP:", self.ESP_TunnelWidgt)
+        self.ESP_srcLabel.move(5, 30)
+
+        self.ESP_dstLabel = QtGui.QLabel("Destination IP:", self.ESP_TunnelWidgt)
+        self.ESP_dstLabel.move(5, 70)
+
+        self.ESP_srcLine = QtGui.QLineEdit(self.ESP_TunnelWidgt)
+        self.ESP_srcLine.setGeometry(QtCore.QRect(100, 25, 250, 25))
+
+        self.ESP_dstLine = QtGui.QLineEdit(self.ESP_TunnelWidgt)
+        self.ESP_dstLine.setGeometry(QtCore.QRect(100, 65, 250, 25))
+
+        self.ESP_TunnelWidgt.setVisible(False)
+        # ToDo fix the checkbox
+        self.connect(self.ESP_CheckTunnel, QtCore.SIGNAL('clicked(bool)'), self.slot_ESP_tunnel_header)
+
         self.HopByHopHdr.setVisible(False)
         self.HopByHopHdr_2.setVisible(False)
         self.DestinationHdr.setVisible(False)
         self.DestinationHdr_2.setVisible(False)
         self.RoutingHdr.setVisible(False)
         self.FragmentHdr.setVisible(False)
+        self.AuthHdr.setVisible(False)
+        self.ESPHdr.setVisible(False)
 
         if self.ExtHdr[0] == '':
             self.HopByHopHdr.setVisible(True)
@@ -218,11 +351,20 @@ class EH(QtGui.QDialog):
             self.FragmentHdr_ID.setText(str(self.ExtHdr[2]))
             if self.ExtHdr[3] == 0:
                 self.FragmentHdr_M.setChecked(True)
+        # Update
+        elif self.ExtHdr[0] == 'Authentication':
+                self.ExtensionHdr.setCurrentIndex(4)
+                self.AuthHdr.setVisible(True)
+        # Update
+        elif self.ExtHdr[0] == 'Encapsulating Security Payload':
+            self.ExtensionHdr.setCurrentIndex(5)
+            self.ESPHdr.setVisible(True)
+
              
 
         self.connect(self.ExtensionHdr, QtCore.SIGNAL('activated(int)'), self.EHConf)
         self.OKButton = QtGui.QPushButton("OK",self)
-        self.OKButton.setGeometry(QtCore.QRect(111, 300, 98, 27))
+        self.OKButton.setGeometry(QtCore.QRect(130, 350, 98, 27))
         self.connect(self.OKButton, QtCore.SIGNAL('clicked()'), self.ready)
         self.show()
  
@@ -232,21 +374,45 @@ class EH(QtGui.QDialog):
             self.DestinationHdr.setVisible(False)
             self.RoutingHdr.setVisible(False)
             self.FragmentHdr.setVisible(False)
+            self.AuthHdr.setVisible(False)
+            self.ESPHdr.setVisible(False)
         elif self.ExtensionHdr.currentText() == 'Destination Options':
             self.HopByHopHdr.setVisible(False)
             self.DestinationHdr.setVisible(True)
             self.RoutingHdr.setVisible(False)
             self.FragmentHdr.setVisible(False)
+            self.AuthHdr.setVisible(False)
+            self.ESPHdr.setVisible(False)
         elif self.ExtensionHdr.currentText() == 'Routing':
             self.HopByHopHdr.setVisible(False)
             self.DestinationHdr.setVisible(False)
             self.RoutingHdr.setVisible(True)
             self.FragmentHdr.setVisible(False)
+            self.AuthHdr.setVisible(False)
+            self.ESPHdr.setVisible(False)
         elif self.ExtensionHdr.currentText() == 'Fragmentation':
             self.HopByHopHdr.setVisible(False)
             self.DestinationHdr.setVisible(False)
             self.RoutingHdr.setVisible(False)
             self.FragmentHdr.setVisible(True)
+            self.AuthHdr.setVisible(False)
+            self.ESPHdr.setVisible(False)
+
+            # Update
+        elif self.ExtensionHdr.currentText() == 'Authentication':
+            self.HopByHopHdr.setVisible(False)
+            self.DestinationHdr.setVisible(False)
+            self.RoutingHdr.setVisible(False)
+            self.FragmentHdr.setVisible(False)
+            self.AuthHdr.setVisible(True)
+            self.ESPHdr.setVisible(False)
+        elif self.ExtensionHdr.currentText() == 'Encapsulating Security Payload':
+            self.HopByHopHdr.setVisible(False)
+            self.DestinationHdr.setVisible(False)
+            self.RoutingHdr.setVisible(False)
+            self.FragmentHdr.setVisible(False)
+            self.AuthHdr.setVisible(False)
+            self.ESPHdr.setVisible(True)
 
     def HopByHopConf(self):
         if self.HopByHopHdr_Option.currentText() == 'other Option':
@@ -317,6 +483,9 @@ class EH(QtGui.QDialog):
                 self.ExtHdr[3] = 0
             else:
                 self.ExtHdr[3] = 1
+        #Todo adding the 2 new EHs
+
+
         self.accept()
 
     def slotMax2_32(self):
@@ -342,6 +511,20 @@ class EH(QtGui.QDialog):
             self.DestinationHdr_OptType.setText('255')
         if self.DestinationHdr_OptLen.text() != '' and int(self.DestinationHdr_OptLen.text()) >= 256: 
             self.DestinationHdr_OptLen.setText('255')
+
+    # Update
+    def slot_AH_tunnel_header(self):
+        """This Funcation will connect the checkbox in the Authentication Header Window with the hidden tunnel Ip Addresses
+        """
+        self.AuthHdr_TunnelWidgt.setVisible(self.AuthHdr_CheckTunnel.isChecked())
+
+    # Update
+    def slot_ESP_tunnel_header(self):
+        """This Funcation will connect the checkbox in the ESP Header Window with the hidden tunnel Ip Addresses
+                """
+        self.ESP_TunnelWidgt.setVisible(self.ESP_CheckTunnel.isChecked())
+
+
 
 
 class NDOptHdr(QtGui.QDialog):
