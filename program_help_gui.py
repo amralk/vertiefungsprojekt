@@ -215,11 +215,13 @@ class EH(QtGui.QDialog):
         self.Tunnel_dstLabel = QtGui.QLabel("Destination IP:", self.AuthHdr_TunnelWidgt)
         self.Tunnel_dstLabel.move(5, 70)
 
-        self.Tunnel_srcLine = QtGui.QLineEdit(self.AuthHdr_TunnelWidgt)
-        self.Tunnel_srcLine.setGeometry(QtCore.QRect(100, 25, 250, 25))
+        self.AH_tunnel_srcLine = QtGui.QLineEdit(self.AuthHdr_TunnelWidgt)
+        self.AH_tunnel_srcLine.setInputMask('HH:HH:HH:HH:HH:HH')
+        self.AH_tunnel_srcLine.setGeometry(QtCore.QRect(100, 25, 250, 25))
 
-        self.Tunnel_dstLine = QtGui.QLineEdit(self.AuthHdr_TunnelWidgt)
-        self.Tunnel_dstLine.setGeometry(QtCore.QRect(100, 65, 250, 25))
+        self.AH_tunnel_dstLine = QtGui.QLineEdit(self.AuthHdr_TunnelWidgt)
+        self.AH_tunnel_dstLine.setInputMask('HH:HH:HH:HH:HH:HH')
+        self.AH_tunnel_dstLine.setGeometry(QtCore.QRect(100, 65, 250, 25))
 
         self.AuthHdr_TunnelWidgt.setVisible(False)
 
@@ -290,9 +292,11 @@ class EH(QtGui.QDialog):
         self.ESP_dstLabel.move(5, 70)
 
         self.ESP_srcLine = QtGui.QLineEdit(self.ESP_TunnelWidgt)
+        self.ESP_srcLine.setInputMask('HH:HH:HH:HH:HH:HH')
         self.ESP_srcLine.setGeometry(QtCore.QRect(100, 25, 250, 25))
 
         self.ESP_dstLine = QtGui.QLineEdit(self.ESP_TunnelWidgt)
+        self.ESP_dstLine.setInputMask('HH:HH:HH:HH:HH:HH')
         self.ESP_dstLine.setGeometry(QtCore.QRect(100, 65, 250, 25))
 
         self.ESP_TunnelWidgt.setVisible(False)
@@ -484,6 +488,27 @@ class EH(QtGui.QDialog):
             else:
                 self.ExtHdr[3] = 1
         #Todo adding the 2 new EHs
+        #Update
+        #AH
+        elif self.ExtHdr[0] == 'Authentication':
+            self.ExtHdr[1] = self.AuthHdr_AlgoLine.currentText()
+            self.ExtHdr[2] = self.AuthHdr_KeyLine.currentText()
+            if self.AuthHdr_CheckTunnel.isChecked() == True:
+                self.ExtHdr[3] = str(self.AH_tunnel_srcLine.text())
+                self.ExtHdr[4] = str(self.AH_tunnel_dstLine.text())
+
+        #ESP
+        elif self.ExtHdr[0] == 'Encapsulating Security Payload':
+            self.ExtHdr[1] = self.ESP_AlgoLine.currentText()
+            self.ExtHdr[2] = self.ESP_KeyLine.currentText()
+            self.ExtHdr[5] = self.ESP_EncrypAlgoLine.currentText()
+            self.ExtHdr[6] = self.ESP_Encryp_KeyLine.currentText()
+            if self.ESP_CheckTunnel.isChecked() == True:
+                self.ExtHdr[3] = str(self.ESP_srcLine.text())
+                self.ExtHdr[4] = str(self.ESP_dstLine.text())
+
+
+
 
 
         self.accept()
