@@ -52,7 +52,7 @@ from scapy.layers import ipsec
 import thread
 
 class EH(QtGui.QDialog):
-    """The class ``EH`` extension header opens a popup window where 4 different extension header types can be chosen.
+    """The class ``EH`` extension header opens a popup window where 6 different extension header types can be chosen.
 
     :param ExtHdr: is an array to save information for the different EH types 
 
@@ -216,11 +216,11 @@ class EH(QtGui.QDialog):
         self.Tunnel_dstLabel.move(5, 70)
 
         self.AH_tunnel_srcLine = QtGui.QLineEdit(self.AuthHdr_TunnelWidgt)
-        self.AH_tunnel_srcLine.setInputMask('HH:HH:HH:HH:HH:HH')
+        #self.AH_tunnel_srcLine.setInputMask('HH:HH:HH:HH:HH:HH')
         self.AH_tunnel_srcLine.setGeometry(QtCore.QRect(100, 25, 250, 25))
 
         self.AH_tunnel_dstLine = QtGui.QLineEdit(self.AuthHdr_TunnelWidgt)
-        self.AH_tunnel_dstLine.setInputMask('HH:HH:HH:HH:HH:HH')
+        #self.AH_tunnel_dstLine.setInputMask('HH:HH:HH:HH:HH:HH')
         self.AH_tunnel_dstLine.setGeometry(QtCore.QRect(100, 65, 250, 25))
 
         self.AuthHdr_TunnelWidgt.setVisible(False)
@@ -292,11 +292,11 @@ class EH(QtGui.QDialog):
         self.ESP_dstLabel.move(5, 70)
 
         self.ESP_srcLine = QtGui.QLineEdit(self.ESP_TunnelWidgt)
-        self.ESP_srcLine.setInputMask('HH:HH:HH:HH:HH:HH')
+        #self.ESP_srcLine.setInputMask('HH:HH:HH:HH:HH:HH')
         self.ESP_srcLine.setGeometry(QtCore.QRect(100, 25, 250, 25))
 
         self.ESP_dstLine = QtGui.QLineEdit(self.ESP_TunnelWidgt)
-        self.ESP_dstLine.setInputMask('HH:HH:HH:HH:HH:HH')
+        #self.ESP_dstLine.setInputMask('HH:HH:HH:HH:HH:HH')
         self.ESP_dstLine.setGeometry(QtCore.QRect(100, 65, 250, 25))
 
         self.ESP_TunnelWidgt.setVisible(False)
@@ -359,12 +359,71 @@ class EH(QtGui.QDialog):
         elif self.ExtHdr[0] == 'Authentication':
                 self.ExtensionHdr.setCurrentIndex(4)
                 self.AuthHdr.setVisible(True)
+                if self.ExtHdr[1] == 'NUll':
+                    self.AuthHdr_AlgoLine.setCurrentIndex(0)
+                elif self.ExtHdr[1] == 'HMAC-SHA1-96':
+                    self.AuthHdr_AlgoLine.setCurrentIndex(1)
+                elif self.ExtHdr[1] == 'SHA2-256-128':
+                    self.AuthHdr_AlgoLine.setCurrentIndex(2)
+                elif self.ExtHdr[1] == 'SHA2-384-192':
+                    self.AuthHdr_AlgoLine.setCurrentIndex(3)
+                elif self.ExtHdr[1] == 'SHA2-512-256':
+                    self.AuthHdr_AlgoLine.setCurrentIndex(4)
+                elif self.ExtHdr[1] == 'HMAC-MD5-96':
+                    self.AuthHdr_AlgoLine.setCurrentIndex(5)
+                elif self.ExtHdr[1] == 'AES-CMAC-96':
+                    self.AuthHdr_AlgoLine.setCurrentIndex(6)
+
+                self.AuthHdr_KeyLine.setEditText(str(ExtHdr[2]))
+
+                # if self.AuthHdr_CheckTunnel.isChecked():
+                #     self.AH_tunnel_srcLine.setText(ExtHdr[3])
+                #     self.AH_tunnel_dstLine.setText(ExtHdr[4])
+
+
         # Update
         elif self.ExtHdr[0] == 'Encapsulating Security Payload':
             self.ExtensionHdr.setCurrentIndex(5)
             self.ESPHdr.setVisible(True)
+            if self.ExtHdr[1] == 'NUll':
+                self.ESP_AlgoLine.setCurrentIndex(0)
+            elif self.ExtHdr[1] == 'HMAC-SHA1-96':
+                self.ESP_AlgoLine.setCurrentIndex(1)
+            elif self.ExtHdr[1] == 'SHA2-256-128':
+                self.ESP_AlgoLine.setCurrentIndex(2)
+            elif self.ExtHdr[1] == 'SHA2-384-192':
+                self.ESP_AlgoLine.setCurrentIndex(3)
+            elif self.ExtHdr[1] == 'SHA2-512-256':
+                self.ESP_AlgoLine.setCurrentIndex(4)
+            elif self.ExtHdr[1] == 'HMAC-MD5-96':
+                self.ESP_AlgoLine.setCurrentIndex(5)
+            elif self.ExtHdr[1] == 'AES-CMAC-96':
+                self.ESP_AlgoLine.setCurrentIndex(6)
 
-             
+            self.ESP_KeyLine.setEditText(str(ExtHdr[2]))
+
+            if self.ExtHdr[3] == 'NUll':
+                self.ESP_EncrypAlgoLine.setCurrentIndex(0)
+            elif self.ExtHdr[3] == 'AES-CBC':
+                self.ESP_EncrypAlgoLine.setCurrentIndex(1)
+            elif self.ExtHdr[3] == 'AES-GCM':
+                self.ESP_EncrypAlgoLine.setCurrentIndex(2)
+            elif self.ExtHdr[3] == 'DES':
+                self.ESP_EncrypAlgoLine.setCurrentIndex(3)
+            elif self.ExtHdr[3] == '3DES':
+                self.ESP_EncrypAlgoLine.setCurrentIndex(4)
+            elif self.ExtHdr[3] == 'Blowfish':
+                self.ESP_EncrypAlgoLine.setCurrentIndex(5)
+            elif self.ExtHdr[3] == 'CAST':
+                self.ESP_EncrypAlgoLine.setCurrentIndex(6)
+
+            self.ESP_Encryp_KeyLine.setEditText(str(ExtHdr[4]))
+            #
+            # if self.ESP_CheckTunnel.isChecked():
+            #     self.ESP_srcLine.setText(ExtHdr[5])
+            #     self.ESP_dstLine.setText(ExtHdr[6])
+
+
 
         self.connect(self.ExtensionHdr, QtCore.SIGNAL('activated(int)'), self.EHConf)
         self.OKButton = QtGui.QPushButton("OK",self)
@@ -487,7 +546,7 @@ class EH(QtGui.QDialog):
                 self.ExtHdr[3] = 0
             else:
                 self.ExtHdr[3] = 1
-        #Todo adding the 2 new EHs
+
         #Update
         #AH
         elif self.ExtHdr[0] == 'Authentication':
@@ -497,15 +556,16 @@ class EH(QtGui.QDialog):
                 self.ExtHdr[3] = str(self.AH_tunnel_srcLine.text())
                 self.ExtHdr[4] = str(self.AH_tunnel_dstLine.text())
 
+        #Update
         #ESP
         elif self.ExtHdr[0] == 'Encapsulating Security Payload':
             self.ExtHdr[1] = self.ESP_AlgoLine.currentText()
             self.ExtHdr[2] = self.ESP_KeyLine.currentText()
-            self.ExtHdr[5] = self.ESP_EncrypAlgoLine.currentText()
-            self.ExtHdr[6] = self.ESP_Encryp_KeyLine.currentText()
+            self.ExtHdr[3] = self.ESP_EncrypAlgoLine.currentText()
+            self.ExtHdr[4] = self.ESP_Encryp_KeyLine.currentText()
             if self.ESP_CheckTunnel.isChecked() == True:
-                self.ExtHdr[3] = str(self.ESP_srcLine.text())
-                self.ExtHdr[4] = str(self.ESP_dstLine.text())
+                self.ExtHdr[5] = str(self.ESP_srcLine.text())
+                self.ExtHdr[6] = str(self.ESP_dstLine.text())
 
 
 

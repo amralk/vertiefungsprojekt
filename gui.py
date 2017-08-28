@@ -875,7 +875,10 @@ class Main(QtGui.QMainWindow):
             item = self.ExtHdr_tableWidget.item(numRows, 0)
             item.setFlags(Qt.Qt.ItemIsSelectable | Qt.Qt.ItemIsEnabled )
             item.setTextAlignment(Qt.Qt.AlignHCenter | Qt.Qt.AlignVCenter)
-            self.IPv6.ExtHdr.append(['','','',''])
+            #self.IPv6.ExtHdr.append(['','','',''])
+            #Update
+            self.IPv6.ExtHdr.append(['', '', '', '', '', '', ''])
+
         self.setEnabled(True)
 
     def slotEditExtHdr(self):

@@ -122,7 +122,9 @@ class IPv6Packet:
     """
     EthHdr = {'LLSrcAddr': None, 'LLDstAddr': None, 'Interface': None}
     IPHdr = {'SrcIPAddr': None, 'DstIPAddr': None, 'HopLimit': 64, 'TrafficClass': 0, 'FlowLabel': 0 , 'ExpertMode': False}
-    ExtHdr = [['','','','']]
+    #ExtHdr = [['','','','']]
+    #Update to 7 to fit AH and ESP EH
+    ExtHdr = [['', '', '', '', '', '', '']]
     indize = 0
     RAconf = {'M': False, 'O': False, 'RLTime':'1800', 'CHLim': '255'}
     NSconf = {'NS_tgtAddr': '::'}
@@ -307,6 +309,9 @@ class Buildit:
                         ExtensionHeader = IPv6ExtHdrFragment(m = self.IPv6.ExtHdr[d][3], offset = int(self.IPv6.ExtHdr[d][1]), id = int(self.IPv6.ExtHdr[d][2]))
                     else:
                         ExtensionHeader = ExtensionHeader/ IPv6ExtHdrFragment(m = 1, offset = int(self.IPv6.ExtHdr[d][1]), id = int(self.IPv6.ExtHdr[d][2]))
+            #Update to Add the 2 new headers
+
+
         return(ExtensionHeader)
 
     ###############
