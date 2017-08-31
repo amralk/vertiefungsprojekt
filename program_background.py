@@ -49,6 +49,7 @@ import sys
 import shelve
 from PyQt4 import QtCore, QtGui, Qt
 from scapy.all import *
+from scapy.layers import ipsec
 from struct import *
 
 class IPv6Packet:
@@ -181,9 +182,9 @@ class Buildit:
 
         self.IPv6packet['IPHeader'] = IPv6()
         if self.IPv6.IPHdr['SrcIPAddr'] != ('' and None): 
-            self.IPv6packet['IPHeader'].src=self.IPv6.IPHdr['SrcIPAddr']
+            self.IPv6packet['IPHeader'].src = self.IPv6.IPHdr['SrcIPAddr']
         if self.IPv6.IPHdr['DstIPAddr'] != ('' and None): 
-            self.IPv6packet['IPHeader'].dst=self.IPv6.IPHdr['DstIPAddr']
+            self.IPv6packet['IPHeader'].dst = self.IPv6.IPHdr['DstIPAddr']
         if self.IPv6.IPHdr['ExpertMode'] == True:
             self.IPv6packet['IPHeader'].hlim = self.IPv6.IPHdr['HopLimit']
             self.IPv6packet['IPHeader'].tc = self.IPv6.IPHdr['TrafficClass']
@@ -197,6 +198,7 @@ class Buildit:
             self.IPv6packet['ExtHeader'] = self.BuildExtHdr(self.NumExtHdr - 1)
         else:
             self.IPv6packet['ExtHeader'] = None
+
 
         ########################
         ## add next header
@@ -267,6 +269,7 @@ class Buildit:
     ###############
     ## Build Extension Header
 
+
     def  BuildExtHdr(self, Num):
         """creates a extension header in scapy code.
         
@@ -310,6 +313,37 @@ class Buildit:
                     else:
                         ExtensionHeader = ExtensionHeader/ IPv6ExtHdrFragment(m = 1, offset = int(self.IPv6.ExtHdr[d][1]), id = int(self.IPv6.ExtHdr[d][2]))
             #Update to Add the 2 new headers
+            #Update AH
+            elif self.IPv6.ExtHdr[d][0] == 'Authentication':
+                SA = SecurityAssociation(AH, spi=0x222,
+                                         auth_algo=self.IPv6.ExtHdr[d][1], auth_key=self.IPv6.ExtHdr[d][2])
+                if d == 0:
+                    packet = self.IPv6packet['IPHeader']
+                    ExtensionHeader = SA.encrypt(packet)
+                    ExtensionHeader = ExtensionHeader[1]
+
+                else:
+                    packet = self.IPv6packet['IPHeader']/ExtensionHeader
+                    ExtensionHeader = SA.encrypt(packet)
+                    ExtensionHeader = ExtensionHeader[1]
+
+
+
+            #Update ESP
+            elif self.IPv6.ExtHdr[d][0] == 'Encapsulating Security Payload':
+                SA = SecurityAssociation(ESP, spi=0x222, auth_algo=self.IPv6.ExtHdr[d][1], auth_key=self.IPv6.ExtHdr[d][2],
+                                         crypt_algo=self.IPv6.ExtHdr[d][3],
+                                         crypt_key=self.IPv6.ExtHdr[d][4]
+                                         )
+                if d == 0:
+                    packet = self.IPv6packet['IPHeader']
+                    ExtensionHeader = SA.encrypt(packet)
+                    ExtensionHeader = ExtensionHeader[1]
+
+                else:
+                    packet = self.IPv6packet['IPHeader']/ExtensionHeader
+                    ExtensionHeader = SA.encrypt(packet)
+                    ExtensionHeader = ExtensionHeader[1]
 
 
         return(ExtensionHeader)

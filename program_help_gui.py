@@ -199,7 +199,7 @@ class EH(QtGui.QDialog):
         self.AuthHdr_KeyLine = QtGui.QComboBox(self.AuthHdr)
         self.AuthHdr_KeyLine.setGeometry(QtCore.QRect(10, 105, 150, 30))
         self.AuthHdr_KeyLine.setEditable(True)
-        self.AuthHdr_KeyLine.addItem('')
+        self.AuthHdr_KeyLine.addItem('None')
         self.AuthHdr_KeyLine.addItem('secert key')
         self.AuthHdr_KeyLine.addItem('sixteenbytes key')
 
@@ -250,7 +250,7 @@ class EH(QtGui.QDialog):
         self.ESP_KeyLine = QtGui.QComboBox(self.ESPHdr)
         self.ESP_KeyLine.setGeometry(QtCore.QRect(10, 105, 150, 30))
         self.ESP_KeyLine.setEditable(True)
-        self.ESP_KeyLine.addItem('')
+        self.ESP_KeyLine.addItem('None')
         self.ESP_KeyLine.addItem('secert key')
         self.ESP_KeyLine.addItem('sixteenbytes key')
 
@@ -261,7 +261,7 @@ class EH(QtGui.QDialog):
         self.ESP_EncrypAlgoLine.setGeometry(QtCore.QRect(200, 35, 150, 31))
         self.ESP_EncrypAlgoLine.addItem("NULL")
         self.ESP_EncrypAlgoLine.addItem('AES-CBC')
-        self.ESP_EncrypAlgoLine.addItem('AES-GCM')
+        self.ESP_EncrypAlgoLine.addItem('AES-CTR')
         self.ESP_EncrypAlgoLine.addItem('DES')
         self.ESP_EncrypAlgoLine.addItem('3DES')
         self.ESP_EncrypAlgoLine.addItem('Blowfish')
@@ -406,7 +406,7 @@ class EH(QtGui.QDialog):
                 self.ESP_EncrypAlgoLine.setCurrentIndex(0)
             elif self.ExtHdr[3] == 'AES-CBC':
                 self.ESP_EncrypAlgoLine.setCurrentIndex(1)
-            elif self.ExtHdr[3] == 'AES-GCM':
+            elif self.ExtHdr[3] == 'AES-CTR':
                 self.ESP_EncrypAlgoLine.setCurrentIndex(2)
             elif self.ExtHdr[3] == 'DES':
                 self.ESP_EncrypAlgoLine.setCurrentIndex(3)
@@ -550,22 +550,22 @@ class EH(QtGui.QDialog):
         #Update
         #AH
         elif self.ExtHdr[0] == 'Authentication':
-            self.ExtHdr[1] = self.AuthHdr_AlgoLine.currentText()
-            self.ExtHdr[2] = self.AuthHdr_KeyLine.currentText()
-            if self.AuthHdr_CheckTunnel.isChecked() == True:
-                self.ExtHdr[3] = str(self.AH_tunnel_srcLine.text())
-                self.ExtHdr[4] = str(self.AH_tunnel_dstLine.text())
+            self.ExtHdr[1] = str(self.AuthHdr_AlgoLine.currentText())
+            self.ExtHdr[2] = str(self.AuthHdr_KeyLine.currentText())
+            #if self.AuthHdr_CheckTunnel.isChecked() == True:
+                #self.ExtHdr[3] = str(self.AH_tunnel_srcLine.text())
+                #self.ExtHdr[4] = str(self.AH_tunnel_dstLine.text())
 
         #Update
         #ESP
         elif self.ExtHdr[0] == 'Encapsulating Security Payload':
-            self.ExtHdr[1] = self.ESP_AlgoLine.currentText()
-            self.ExtHdr[2] = self.ESP_KeyLine.currentText()
-            self.ExtHdr[3] = self.ESP_EncrypAlgoLine.currentText()
-            self.ExtHdr[4] = self.ESP_Encryp_KeyLine.currentText()
-            if self.ESP_CheckTunnel.isChecked() == True:
-                self.ExtHdr[5] = str(self.ESP_srcLine.text())
-                self.ExtHdr[6] = str(self.ESP_dstLine.text())
+            self.ExtHdr[1] = str(self.ESP_AlgoLine.currentText())
+            self.ExtHdr[2] = str(self.ESP_KeyLine.currentText())
+            self.ExtHdr[3] = str(self.ESP_EncrypAlgoLine.currentText())
+            self.ExtHdr[4] = str(self.ESP_Encryp_KeyLine.currentText())
+            # if self.ESP_CheckTunnel.isChecked() == True:
+            #     self.ExtHdr[5] = str(self.ESP_srcLine.text())
+            #     self.ExtHdr[6] = str(self.ESP_dstLine.text())
 
 
 
