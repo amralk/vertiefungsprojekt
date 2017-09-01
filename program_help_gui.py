@@ -40,8 +40,8 @@
 ##                                                                      #
 #########################################################################
 ##                                                                      #
-## Version: 2.2                                                         #
-## Date:    23.11.2011                                                  #
+## Version: 2.3                                                         #
+## Update:    1.8.2017                                                  #
 ##                                                                      #
 #########################################################################
 
@@ -273,7 +273,7 @@ class EH(QtGui.QDialog):
         self.ESP_Encryp_KeyLine = QtGui.QComboBox(self.ESPHdr)
         self.ESP_Encryp_KeyLine.setGeometry(QtCore.QRect(200, 105, 150, 30))
         self.ESP_Encryp_KeyLine.setEditable(True)
-        self.ESP_Encryp_KeyLine.addItem('')
+        self.ESP_Encryp_KeyLine.addItem('None')
         self.ESP_Encryp_KeyLine.addItem('threedifferent8byteskeys')
         self.ESP_Encryp_KeyLine.addItem('sixteenbytes key')
         self.ESP_Encryp_KeyLine.addItem('8bytekey')

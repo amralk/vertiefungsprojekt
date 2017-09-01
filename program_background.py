@@ -40,8 +40,8 @@
 ##                                                                      #
 #########################################################################
 ##                                                                      #
-## Version: 2.2                                                         #
-## Date:    23.11.2011                                                  #
+## Version: 2.3                                                         #
+## Date:    1.8.2011                                                    #
 ##                                                                      #
 #########################################################################
 
@@ -165,6 +165,9 @@ class Buildit:
                            'ExtHeader':None,'NextHeader':None}
         self.IPv6Scapy = None
 
+        #Update
+        self.pkt_encrypt = False
+
         ##################
         ## Ethernet Header
 
@@ -190,8 +193,21 @@ class Buildit:
             self.IPv6packet['IPHeader'].tc = self.IPv6.IPHdr['TrafficClass']
             self.IPv6packet['IPHeader'].fl = self.IPv6.IPHdr['FlowLabel']
 
+
+        #Update
+        #Moved the NextHeader build before the ExtHdr
+
+        ########################
+        ## add next header
+        ######################
+
+        self.IPv6packet['NextHeader'] = self.BuildNextHeader()
+
+
+
         ############################
         ## add extension header if set
+        ##############################
 
         self.NumExtHdr = len(self.IPv6.ExtHdr)
         if self.NumExtHdr > 0:
@@ -200,12 +216,8 @@ class Buildit:
             self.IPv6packet['ExtHeader'] = None
 
 
-        ########################
-        ## add next header
 
-        self.IPv6packet['NextHeader'] = self.BuildNextHeader()
 
-        ############
         ## get iface
 
         if self.IPv6.EthHdr['Interface'] != '':
@@ -215,15 +227,24 @@ class Buildit:
 
         ##########
         ## send or save (pcap or Clipbord)
-		
-        if self.IPv6packet['ExtHeader'] == (None or '') and self.IPv6packet['NextHeader'] != None:
-            self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['IPHeader']/self.IPv6packet['NextHeader'])
-        elif self.IPv6packet['ExtHeader'] == (None or '') and self.IPv6packet['NextHeader'] == None:
-            self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['IPHeader'])
-        elif self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] != None:
-            self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['IPHeader']/self.IPv6packet['ExtHeader']/self.IPv6packet['NextHeader'])
-        elif self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] == None:
-            self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['IPHeader']/self.IPv6packet['ExtHeader'])
+
+        #Update
+        #Encrypting the next header
+        if self.pkt_encrypt:
+            if self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] != None:
+                self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['IPHeader']/self.IPv6packet['ExtHeader'])
+            elif self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] == None:
+                self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['IPHeader']/self.IPv6packet['ExtHeader'])
+
+        else:
+            if self.IPv6packet['ExtHeader'] == (None or '') and self.IPv6packet['NextHeader'] != None:
+                self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['IPHeader']/self.IPv6packet['NextHeader'])
+            elif self.IPv6packet['ExtHeader'] == (None or '') and self.IPv6packet['NextHeader'] == None:
+                self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['IPHeader'])
+            elif self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] != None:
+                self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['IPHeader']/self.IPv6packet['ExtHeader']/self.IPv6packet['NextHeader'])
+            elif self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] == None:
+                self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['IPHeader']/self.IPv6packet['ExtHeader'])
 
         if self.IPv6.indize == 0 and self.IPv6.ICMP['indize'] in (130, 131, 132): # Next Header for Multicast Listener Messages
             self.IPv6Scapy[len(self.IPv6.ExtHdr)].nh = 58
@@ -249,7 +270,7 @@ class Buildit:
         if Option == 0:
             ## send
             sendp(self.IPv6Scapy, iface = Interface)
-                
+
         elif Option == 1:
             ## save as .pcap
             wrpcap(File, self.IPv6Scapy)
@@ -315,15 +336,16 @@ class Buildit:
             #Update to Add the 2 new headers
             #Update AH
             elif self.IPv6.ExtHdr[d][0] == 'Authentication':
+                self.pkt_encrypt = True
                 SA = SecurityAssociation(AH, spi=0x222,
                                          auth_algo=self.IPv6.ExtHdr[d][1], auth_key=self.IPv6.ExtHdr[d][2])
                 if d == 0:
-                    packet = self.IPv6packet['IPHeader']
+                    packet = self.IPv6packet['IPHeader']/self.IPv6packet['NextHeader']
                     ExtensionHeader = SA.encrypt(packet)
                     ExtensionHeader = ExtensionHeader[1]
 
                 else:
-                    packet = self.IPv6packet['IPHeader']/ExtensionHeader
+                    packet = self.IPv6packet['IPHeader']/ExtensionHeader/self.IPv6packet['NextHeader']
                     ExtensionHeader = SA.encrypt(packet)
                     ExtensionHeader = ExtensionHeader[1]
 
@@ -331,19 +353,25 @@ class Buildit:
 
             #Update ESP
             elif self.IPv6.ExtHdr[d][0] == 'Encapsulating Security Payload':
-                SA = SecurityAssociation(ESP, spi=0x222, auth_algo=self.IPv6.ExtHdr[d][1], auth_key=self.IPv6.ExtHdr[d][2],
-                                         crypt_algo=self.IPv6.ExtHdr[d][3],
-                                         crypt_key=self.IPv6.ExtHdr[d][4]
-                                         )
-                if d == 0:
-                    packet = self.IPv6packet['IPHeader']
-                    ExtensionHeader = SA.encrypt(packet)
-                    ExtensionHeader = ExtensionHeader[1]
+                self.pkt_encrypt = True
+                try:
+                    SA = SecurityAssociation(ESP, spi=0x222, auth_algo=self.IPv6.ExtHdr[d][1], auth_key=self.IPv6.ExtHdr[d][2],
+                                             crypt_algo=self.IPv6.ExtHdr[d][3],
+                                             crypt_key=self.IPv6.ExtHdr[d][4]
+                                             )
+                    if d == 0:
+                        packet = self.IPv6packet['IPHeader']/self.IPv6packet['NextHeader']
+                        ExtensionHeader = SA.encrypt(packet)
+                        ExtensionHeader = ExtensionHeader[1]
 
-                else:
-                    packet = self.IPv6packet['IPHeader']/ExtensionHeader
-                    ExtensionHeader = SA.encrypt(packet)
-                    ExtensionHeader = ExtensionHeader[1]
+                    else:
+                        packet = self.IPv6packet['IPHeader']/ExtensionHeader/self.IPv6packet['NextHeader']
+                        ExtensionHeader = SA.encrypt(packet)
+                        ExtensionHeader = ExtensionHeader[1]
+                except Exception:
+                    QtGui.QMessageBox.warning(None, "Encrypt Key Problem",
+                                                            "This Key is not fit with the Encrypt Method, "
+                                                            "sending the packet without ESP")
 
 
         return(ExtensionHeader)
