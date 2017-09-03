@@ -232,7 +232,8 @@ class Buildit:
         #Update
         #Encrypting the next header
         if self.pkt_encrypt:
-            if self.IPv6.Tunnel['AH'] | self.IPv6.Tunnel['ESP']:
+            #if self.IPv6.Tunnel['AH'] | self.IPv6.Tunnel['ESP']:
+            if self.IPv6.Tunnel['ESP']:
                 if self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] != None:
                     self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['ExtHeader'])
                 elif self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] == None:
@@ -357,12 +358,18 @@ class Buildit:
                         if d == 0:
                             packet = self.IPv6packet['IPHeader'] / self.IPv6packet['NextHeader']
                             ExtensionHeader = SA.encrypt(packet)
+                            ExtensionHeader = ExtensionHeader[1]
 
                         else:
                             packet = self.IPv6packet['IPHeader'] / ExtensionHeader / self.IPv6packet['NextHeader']
                             ExtensionHeader = SA.encrypt(packet)
+                            ExtensionHeader = ExtensionHeader[1]
+                    except socket.error:
+                        QtGui.QMessageBox.warning(None, 'Wrong IP Address', 'The IP address is not in correct form')
+
+
                     except Exception:
-                        QtGui.QMessageBox.warning(None,'Wrong IP Address', 'The IP address is not in correct form')
+                        QtGui.QMessageBox.warning(None,'Error', 'Something went wrong')
 
 
                 else:
@@ -399,11 +406,13 @@ class Buildit:
                             packet = self.IPv6packet['IPHeader'] / ExtensionHeader / self.IPv6packet['NextHeader']
                             ExtensionHeader = SA.encrypt(packet)
                     #Todo: Exception IP must be added
-                    except Exception as e:
-                        #print e
+                    except socket.error:
+                        QtGui.QMessageBox.warning(None, 'Wrong IP Address', 'The IP address is not in correct form')
+
+
+                    except Exception:
                         QtGui.QMessageBox.warning(None, "Encrypt Key Problem",
-                                                  "This Key is not fit with the Encrypt Method, "
-                                                  "sending the packet without ESP")
+                                                  "This Key is not fit with the Encrypt Method, please check the key")
 
                 else:
 
@@ -421,11 +430,13 @@ class Buildit:
                             packet = self.IPv6packet['IPHeader']/ExtensionHeader/self.IPv6packet['NextHeader']
                             ExtensionHeader = SA.encrypt(packet)
                             ExtensionHeader = ExtensionHeader[1]
-                    except Exception as e:
-                        print e
+                    except socket.error:
+                        QtGui.QMessageBox.warning(None, 'Wrong IP Address', 'The IP address is not in correct form')
+
+
+                    except Exception:
                         QtGui.QMessageBox.warning(None, "Encrypt Key Problem",
-                                                                "This Key is not fit with the Encrypt Method, "
-                                                                "sending the packet without ESP")
+                                                                "This Key is not fit with the Encrypt Method, please check the key")
 
 
         return(ExtensionHeader)

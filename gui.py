@@ -1169,7 +1169,13 @@ Then you can change the whole extension header or only the values of your extens
     def slotSend(self):
         """This function starts the process of sending a packet.
 """
-        self.creatIPv6(0, '')
+        #Update
+        try:
+            self.creatIPv6(0, '')
+        except Exception:
+            QtGui.QMessageBox.warning(None, 'Error in the Packet','Please Check the Packet values')
+
+
 
     def slotClipboard(self):
         """This function starts the process of save a packet to clipboard.
