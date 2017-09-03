@@ -218,10 +218,12 @@ class EH(QtGui.QDialog):
 
         self.AH_tunnel_srcLine = QtGui.QLineEdit(self.AuthHdr_TunnelWidgt)
         #self.AH_tunnel_srcLine.setInputMask('hh::hh')
+        #self.AH_tunnel_srcLine.setText('11::11')
         self.AH_tunnel_srcLine.setGeometry(QtCore.QRect(100, 25, 250, 25))
 
         self.AH_tunnel_dstLine = QtGui.QLineEdit(self.AuthHdr_TunnelWidgt)
         #self.AH_tunnel_dstLine.setInputMask('hh::hh')
+        #self.AH_tunnel_dstLine.setText('11::11')
         self.AH_tunnel_dstLine.setGeometry(QtCore.QRect(100, 65, 250, 25))
 
         self.AuthHdr_TunnelWidgt.setVisible(False)
@@ -293,11 +295,11 @@ class EH(QtGui.QDialog):
         self.ESP_dstLabel.move(5, 70)
 
         self.ESP_srcLine = QtGui.QLineEdit(self.ESP_TunnelWidgt)
-        self.ESP_srcLine.setInputMask('HH:HH:HH:HH:HH:HH')
+        #self.ESP_srcLine.setInputMask('HH:HH:HH:HH:HH:HH')
         self.ESP_srcLine.setGeometry(QtCore.QRect(100, 25, 250, 25))
 
         self.ESP_dstLine = QtGui.QLineEdit(self.ESP_TunnelWidgt)
-        self.ESP_dstLine.setInputMask('HH:HH:HH:HH:HH:HH')
+        #self.ESP_dstLine.setInputMask('HH:HH:HH:HH:HH:HH')
         self.ESP_dstLine.setGeometry(QtCore.QRect(100, 65, 250, 25))
 
         self.ESP_TunnelWidgt.setVisible(False)
@@ -567,7 +569,17 @@ class EH(QtGui.QDialog):
             if self.AuthHdr_CheckTunnel.isChecked():
                 self.Tunnel['AH'] = True
                 self.ExtHdr[3] = str(self.AH_tunnel_srcLine.text())
+                if self.ExtHdr[3] == '':
+                    QtGui.QMessageBox.warning(self.AuthHdr, 'Error', 'Source IP should not be empty')
+                    self.AH_tunnel_srcLine.setText('aa::bb')
+                    self.ExtHdr[3] = str(self.AH_tunnel_srcLine.text())
+
                 self.ExtHdr[4] = str(self.AH_tunnel_dstLine.text())
+                if self.ExtHdr[4] == '':
+                    QtGui.QMessageBox.warning(self.AuthHdr, 'Error', 'Destination should not be empty')
+                    self.AH_tunnel_dstLine.setText('bb::aa')
+                    self.ExtHdr[4] = str(self.AH_tunnel_dstLine.text())
+
 
         #Update
         #ESP
@@ -579,9 +591,16 @@ class EH(QtGui.QDialog):
             if self.ESP_CheckTunnel.isChecked():
                 self.Tunnel['ESP'] = True
                 self.ExtHdr[5] = str(self.ESP_srcLine.text())
+                if self.ExtHdr[5] == '':
+                    QtGui.QMessageBox.warning(self.ESPHdr, 'Error', 'Source IP should not be empty')
+                    self.ESP_srcLine.setText('aa::bb')
+                    self.ExtHdr[5] = str(self.ESP_srcLine.text())
+
                 self.ExtHdr[6] = str(self.ESP_dstLine.text())
-
-
+                if self.ExtHdr[6] == '':
+                    QtGui.QMessageBox.warning(self.ESPHdr, 'Error', 'Destination should not be empty')
+                    self.ESP_dstLine.setText('bb::aa')
+                    self.ExtHdr[6] = str(self.ESP_dstLine.text())
 
 
 

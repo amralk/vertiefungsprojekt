@@ -351,6 +351,7 @@ class Buildit:
                 if self.IPv6.Tunnel['AH']:
                     # Todo: if statement for the IP addresses
                     try:
+
                         SA = SecurityAssociation(AH, spi=0x222,
                                                  auth_algo=self.IPv6.ExtHdr[d][1], auth_key=self.IPv6.ExtHdr[d][2],tunnel_header=IPv6(src=self.IPv6.ExtHdr[d][3], dst=self.IPv6.ExtHdr[d][4]))
                         if d == 0:
@@ -387,7 +388,7 @@ class Buildit:
                         SA = SecurityAssociation(ESP, spi=0x222, auth_algo=self.IPv6.ExtHdr[d][1],
                                                  auth_key=self.IPv6.ExtHdr[d][2],
                                                  crypt_algo=self.IPv6.ExtHdr[d][3],
-                                                 crypt_key=self.IPv6.ExtHdr[d][4], tunnel_header=IPv6(src=ExtHdr[d][5], dst=ExtHdr[d][6]
+                                                 crypt_key=self.IPv6.ExtHdr[d][4], tunnel_header=IPv6(src=self.IPv6.ExtHdr[d][5], dst=self.IPv6.ExtHdr[d][6]
                                                  ))
                         if d == 0:
                             packet = self.IPv6packet['IPHeader'] / self.IPv6packet['NextHeader']
@@ -398,7 +399,8 @@ class Buildit:
                             packet = self.IPv6packet['IPHeader'] / ExtensionHeader / self.IPv6packet['NextHeader']
                             ExtensionHeader = SA.encrypt(packet)
                     #Todo: Exception IP must be added
-                    except Exception:
+                    except Exception as e:
+                        #print e
                         QtGui.QMessageBox.warning(None, "Encrypt Key Problem",
                                                   "This Key is not fit with the Encrypt Method, "
                                                   "sending the packet without ESP")
@@ -419,7 +421,8 @@ class Buildit:
                             packet = self.IPv6packet['IPHeader']/ExtensionHeader/self.IPv6packet['NextHeader']
                             ExtensionHeader = SA.encrypt(packet)
                             ExtensionHeader = ExtensionHeader[1]
-                    except Exception:
+                    except Exception as e:
+                        print e
                         QtGui.QMessageBox.warning(None, "Encrypt Key Problem",
                                                                 "This Key is not fit with the Encrypt Method, "
                                                                 "sending the packet without ESP")
