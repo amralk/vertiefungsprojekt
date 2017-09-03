@@ -865,7 +865,7 @@ class Main(QtGui.QMainWindow):
 """
         self.setEnabled(False)
         Rows = len(self.IPv6.ExtHdr)
-        eh = program_help_gui.EH(self.IPv6.ExtHdr[Rows-1])
+        eh = program_help_gui.EH(self.IPv6.ExtHdr[Rows-1], self.IPv6.Tunnel)
         eh.exec_()
         if self.IPv6.ExtHdr[Rows-1][0] != '':
             numRows = self.ExtHdr_tableWidget.rowCount()
@@ -888,7 +888,7 @@ Then you can change the whole extension header or only the values of your extens
         Row = self.ExtHdr_tableWidget.currentRow()
         if Row != -1:
             self.setEnabled(False)
-            eh = program_help_gui.EH(self.IPv6.ExtHdr[Row])
+            eh = program_help_gui.EH(self.IPv6.ExtHdr[Row], self.IPv6.Tunnel)
             eh.exec_()
             t1 = QtGui.QTableWidgetItem(self.IPv6.ExtHdr[Row][0])
             self.ExtHdr_tableWidget.setItem(Row, 0, t1)

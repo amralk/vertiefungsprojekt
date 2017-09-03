@@ -126,6 +126,7 @@ class IPv6Packet:
     #ExtHdr = [['','','','']]
     #Update to 7 to fit AH and ESP EH
     ExtHdr = [['', '', '', '', '', '', '']]
+    Tunnel = {'AH': False, 'ESP': False}
     indize = 0
     RAconf = {'M': False, 'O': False, 'RLTime':'1800', 'CHLim': '255'}
     NSconf = {'NS_tgtAddr': '::'}
@@ -231,10 +232,19 @@ class Buildit:
         #Update
         #Encrypting the next header
         if self.pkt_encrypt:
-            if self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] != None:
-                self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['IPHeader']/self.IPv6packet['ExtHeader'])
-            elif self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] == None:
-                self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['IPHeader']/self.IPv6packet['ExtHeader'])
+            if self.IPv6.Tunnel['AH'] | self.IPv6.Tunnel['ESP']:
+                if self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] != None:
+                    self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['ExtHeader'])
+                elif self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] == None:
+                    self.IPv6Scapy = (self.IPv6packet['EthHeader']/self.IPv6packet['ExtHeader'])
+            else:
+                if self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] != None:
+                    self.IPv6Scapy = (
+                    self.IPv6packet['EthHeader'] / self.IPv6packet['IPHeader'] / self.IPv6packet['ExtHeader'])
+                elif self.IPv6packet['ExtHeader'] != (None or '') and self.IPv6packet['NextHeader'] == None:
+                    self.IPv6Scapy = (self.IPv6packet['EthHeader'] / self.IPv6packet['IPHeader'] / self.IPv6packet['ExtHeader'])
+
+
 
         else:
             if self.IPv6packet['ExtHeader'] == (None or '') and self.IPv6packet['NextHeader'] != None:
@@ -337,28 +347,25 @@ class Buildit:
             #Update AH
             elif self.IPv6.ExtHdr[d][0] == 'Authentication':
                 self.pkt_encrypt = True
-                SA = SecurityAssociation(AH, spi=0x222,
-                                         auth_algo=self.IPv6.ExtHdr[d][1], auth_key=self.IPv6.ExtHdr[d][2])
-                if d == 0:
-                    packet = self.IPv6packet['IPHeader']/self.IPv6packet['NextHeader']
-                    ExtensionHeader = SA.encrypt(packet)
-                    ExtensionHeader = ExtensionHeader[1]
+
+                if self.IPv6.Tunnel['AH']:
+                    # Todo: if statement for the IP addresses
+                    try:
+                        SA = SecurityAssociation(AH, spi=0x222,
+                                                 auth_algo=self.IPv6.ExtHdr[d][1], auth_key=self.IPv6.ExtHdr[d][2],tunnel_header=IPv6(src=self.IPv6.ExtHdr[d][3], dst=self.IPv6.ExtHdr[d][4]))
+                        if d == 0:
+                            packet = self.IPv6packet['IPHeader'] / self.IPv6packet['NextHeader']
+                            ExtensionHeader = SA.encrypt(packet)
+
+                        else:
+                            packet = self.IPv6packet['IPHeader'] / ExtensionHeader / self.IPv6packet['NextHeader']
+                            ExtensionHeader = SA.encrypt(packet)
+                    except Exception:
+                        QtGui.QMessageBox.warning(None,'Wrong IP Address', 'The IP address is not in correct form')
+
 
                 else:
-                    packet = self.IPv6packet['IPHeader']/ExtensionHeader/self.IPv6packet['NextHeader']
-                    ExtensionHeader = SA.encrypt(packet)
-                    ExtensionHeader = ExtensionHeader[1]
-
-
-
-            #Update ESP
-            elif self.IPv6.ExtHdr[d][0] == 'Encapsulating Security Payload':
-                self.pkt_encrypt = True
-                try:
-                    SA = SecurityAssociation(ESP, spi=0x222, auth_algo=self.IPv6.ExtHdr[d][1], auth_key=self.IPv6.ExtHdr[d][2],
-                                             crypt_algo=self.IPv6.ExtHdr[d][3],
-                                             crypt_key=self.IPv6.ExtHdr[d][4]
-                                             )
+                    SA = SecurityAssociation(AH, spi=0x222,auth_algo=self.IPv6.ExtHdr[d][1], auth_key=self.IPv6.ExtHdr[d][2])
                     if d == 0:
                         packet = self.IPv6packet['IPHeader']/self.IPv6packet['NextHeader']
                         ExtensionHeader = SA.encrypt(packet)
@@ -368,10 +375,54 @@ class Buildit:
                         packet = self.IPv6packet['IPHeader']/ExtensionHeader/self.IPv6packet['NextHeader']
                         ExtensionHeader = SA.encrypt(packet)
                         ExtensionHeader = ExtensionHeader[1]
-                except Exception:
-                    QtGui.QMessageBox.warning(None, "Encrypt Key Problem",
-                                                            "This Key is not fit with the Encrypt Method, "
-                                                            "sending the packet without ESP")
+
+
+
+            #Update ESP
+            elif self.IPv6.ExtHdr[d][0] == 'Encapsulating Security Payload':
+                self.pkt_encrypt = True
+                if self.IPv6.Tunnel['ESP']:
+                    # Todo: if statement for the IP addresses
+                    try:
+                        SA = SecurityAssociation(ESP, spi=0x222, auth_algo=self.IPv6.ExtHdr[d][1],
+                                                 auth_key=self.IPv6.ExtHdr[d][2],
+                                                 crypt_algo=self.IPv6.ExtHdr[d][3],
+                                                 crypt_key=self.IPv6.ExtHdr[d][4], tunnel_header=IPv6(src=ExtHdr[d][5], dst=ExtHdr[d][6]
+                                                 ))
+                        if d == 0:
+                            packet = self.IPv6packet['IPHeader'] / self.IPv6packet['NextHeader']
+                            ExtensionHeader = SA.encrypt(packet)
+
+
+                        else:
+                            packet = self.IPv6packet['IPHeader'] / ExtensionHeader / self.IPv6packet['NextHeader']
+                            ExtensionHeader = SA.encrypt(packet)
+                    #Todo: Exception IP must be added
+                    except Exception:
+                        QtGui.QMessageBox.warning(None, "Encrypt Key Problem",
+                                                  "This Key is not fit with the Encrypt Method, "
+                                                  "sending the packet without ESP")
+
+                else:
+
+                    try:
+                        SA = SecurityAssociation(ESP, spi=0x222, auth_algo=self.IPv6.ExtHdr[d][1], auth_key=self.IPv6.ExtHdr[d][2],
+                                                 crypt_algo=self.IPv6.ExtHdr[d][3],
+                                                 crypt_key=self.IPv6.ExtHdr[d][4]
+                                                 )
+                        if d == 0:
+                            packet = self.IPv6packet['IPHeader']/self.IPv6packet['NextHeader']
+                            ExtensionHeader = SA.encrypt(packet)
+                            ExtensionHeader = ExtensionHeader[1]
+
+                        else:
+                            packet = self.IPv6packet['IPHeader']/ExtensionHeader/self.IPv6packet['NextHeader']
+                            ExtensionHeader = SA.encrypt(packet)
+                            ExtensionHeader = ExtensionHeader[1]
+                    except Exception:
+                        QtGui.QMessageBox.warning(None, "Encrypt Key Problem",
+                                                                "This Key is not fit with the Encrypt Method, "
+                                                                "sending the packet without ESP")
 
 
         return(ExtensionHeader)

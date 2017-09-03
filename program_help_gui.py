@@ -61,11 +61,12 @@ class EH(QtGui.QDialog):
     At the Routing Header is at least one IPv6 address necessary (more are possible).
     At the Fragmentation Header you can set the offset, ID and M-flag.
 """
-    def __init__(self, ExtHdr):
+    def __init__(self, ExtHdr, Tunnel):
         QtGui.QDialog.__init__(self)
         self.setWindowTitle("Extension Header")
         self.resize(380, 400)
         self.ExtHdr = ExtHdr
+        self.Tunnel = Tunnel
         self.Label = QtGui.QLabel("Extension Header:", self)
         self.Label.move(5, 5)
         self.ExtensionHdr = QtGui.QComboBox(self)
@@ -216,11 +217,11 @@ class EH(QtGui.QDialog):
         self.Tunnel_dstLabel.move(5, 70)
 
         self.AH_tunnel_srcLine = QtGui.QLineEdit(self.AuthHdr_TunnelWidgt)
-        #self.AH_tunnel_srcLine.setInputMask('HH:HH:HH:HH:HH:HH')
+        #self.AH_tunnel_srcLine.setInputMask('hh::hh')
         self.AH_tunnel_srcLine.setGeometry(QtCore.QRect(100, 25, 250, 25))
 
         self.AH_tunnel_dstLine = QtGui.QLineEdit(self.AuthHdr_TunnelWidgt)
-        #self.AH_tunnel_dstLine.setInputMask('HH:HH:HH:HH:HH:HH')
+        #self.AH_tunnel_dstLine.setInputMask('hh::hh')
         self.AH_tunnel_dstLine.setGeometry(QtCore.QRect(100, 65, 250, 25))
 
         self.AuthHdr_TunnelWidgt.setVisible(False)
@@ -292,11 +293,11 @@ class EH(QtGui.QDialog):
         self.ESP_dstLabel.move(5, 70)
 
         self.ESP_srcLine = QtGui.QLineEdit(self.ESP_TunnelWidgt)
-        #self.ESP_srcLine.setInputMask('HH:HH:HH:HH:HH:HH')
+        self.ESP_srcLine.setInputMask('HH:HH:HH:HH:HH:HH')
         self.ESP_srcLine.setGeometry(QtCore.QRect(100, 25, 250, 25))
 
         self.ESP_dstLine = QtGui.QLineEdit(self.ESP_TunnelWidgt)
-        #self.ESP_dstLine.setInputMask('HH:HH:HH:HH:HH:HH')
+        self.ESP_dstLine.setInputMask('HH:HH:HH:HH:HH:HH')
         self.ESP_dstLine.setGeometry(QtCore.QRect(100, 65, 250, 25))
 
         self.ESP_TunnelWidgt.setVisible(False)
@@ -376,9 +377,14 @@ class EH(QtGui.QDialog):
 
                 self.AuthHdr_KeyLine.setEditText(str(ExtHdr[2]))
 
-                # if self.AuthHdr_CheckTunnel.isChecked():
-                #     self.AH_tunnel_srcLine.setText(ExtHdr[3])
-                #     self.AH_tunnel_dstLine.setText(ExtHdr[4])
+                if self.Tunnel['AH'] == True:
+                    self.AuthHdr_CheckTunnel.setChecked(True)
+                    self.AuthHdr_TunnelWidgt.setVisible(True)
+                    self.AH_tunnel_srcLine.setText(ExtHdr[3])
+                    self.AH_tunnel_dstLine.setText(ExtHdr[4])
+                else:
+                    self.AuthHdr_CheckTunnel.setChecked(False)
+                    self.AuthHdr_TunnelWidgt.setVisible(False)
 
 
         # Update
@@ -418,12 +424,15 @@ class EH(QtGui.QDialog):
                 self.ESP_EncrypAlgoLine.setCurrentIndex(6)
 
             self.ESP_Encryp_KeyLine.setEditText(str(ExtHdr[4]))
-            #
-            # if self.ESP_CheckTunnel.isChecked():
-            #     self.ESP_srcLine.setText(ExtHdr[5])
-            #     self.ESP_dstLine.setText(ExtHdr[6])
 
-
+            if self.Tunnel['ESP']:
+                self.ESP_CheckTunnel.setChecked(True)
+                self.ESP_TunnelWidgt.setVisible(True)
+                self.ESP_srcLine.setText(ExtHdr[5])
+                self.ESP_dstLine.setText(ExtHdr[6])
+            else:
+                self.ESP_CheckTunnel.setChecked(False)
+                self.ESP_TunnelWidgt.setVisible(False)
 
         self.connect(self.ExtensionHdr, QtCore.SIGNAL('activated(int)'), self.EHConf)
         self.OKButton = QtGui.QPushButton("OK",self)
@@ -510,6 +519,9 @@ class EH(QtGui.QDialog):
     def ready(self):
         """If you are ready to configure an extension header, this function will handle the information in the right order and returns to the main window.
 """
+        #Update Tunnel
+        self.Tunnel['AH'] = False
+        self.Tunnel['ESP'] = False
         self.ExtHdr[0] = self.ExtensionHdr.currentText()
         self.addresses=[]
         if self.ExtHdr[0] == 'Hop By Hop Options':
@@ -552,9 +564,10 @@ class EH(QtGui.QDialog):
         elif self.ExtHdr[0] == 'Authentication':
             self.ExtHdr[1] = str(self.AuthHdr_AlgoLine.currentText())
             self.ExtHdr[2] = str(self.AuthHdr_KeyLine.currentText())
-            #if self.AuthHdr_CheckTunnel.isChecked() == True:
-                #self.ExtHdr[3] = str(self.AH_tunnel_srcLine.text())
-                #self.ExtHdr[4] = str(self.AH_tunnel_dstLine.text())
+            if self.AuthHdr_CheckTunnel.isChecked():
+                self.Tunnel['AH'] = True
+                self.ExtHdr[3] = str(self.AH_tunnel_srcLine.text())
+                self.ExtHdr[4] = str(self.AH_tunnel_dstLine.text())
 
         #Update
         #ESP
@@ -563,9 +576,10 @@ class EH(QtGui.QDialog):
             self.ExtHdr[2] = str(self.ESP_KeyLine.currentText())
             self.ExtHdr[3] = str(self.ESP_EncrypAlgoLine.currentText())
             self.ExtHdr[4] = str(self.ESP_Encryp_KeyLine.currentText())
-            # if self.ESP_CheckTunnel.isChecked() == True:
-            #     self.ExtHdr[5] = str(self.ESP_srcLine.text())
-            #     self.ExtHdr[6] = str(self.ESP_dstLine.text())
+            if self.ESP_CheckTunnel.isChecked():
+                self.Tunnel['ESP'] = True
+                self.ExtHdr[5] = str(self.ESP_srcLine.text())
+                self.ExtHdr[6] = str(self.ESP_dstLine.text())
 
 
 
