@@ -260,6 +260,7 @@ class Buildit:
         if self.IPv6.indize == 0 and self.IPv6.ICMP['indize'] in (130, 131, 132): # Next Header for Multicast Listener Messages
             self.IPv6Scapy[len(self.IPv6.ExtHdr)].nh = 58
 
+        ##To show the packet as string after sending it in a new window
         Command = self.IPv6Scapy.command()
 
         if len(self.Options) >= 1:      # Options of the Extension Header Hop By Hop und Destination
@@ -352,7 +353,7 @@ class Buildit:
                 if self.IPv6.Tunnel['AH']:
                     # Todo: if statement for the IP addresses
                     try:
-
+                        #Adding AH with the selected Authentication method with its key
                         SA = SecurityAssociation(AH, spi=0x222,
                                                  auth_algo=self.IPv6.ExtHdr[d][1], auth_key=self.IPv6.ExtHdr[d][2],tunnel_header=IPv6(src=self.IPv6.ExtHdr[d][3], dst=self.IPv6.ExtHdr[d][4]))
                         if d == 0:
@@ -405,7 +406,6 @@ class Buildit:
                         else:
                             packet = self.IPv6packet['IPHeader'] / ExtensionHeader / self.IPv6packet['NextHeader']
                             ExtensionHeader = SA.encrypt(packet)
-                    #Todo: Exception IP must be added
                     except socket.error:
                         QtGui.QMessageBox.warning(None, 'Wrong IP Address', 'The IP address is not in correct form')
 

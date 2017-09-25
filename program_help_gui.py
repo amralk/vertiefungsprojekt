@@ -312,6 +312,7 @@ class EH(QtGui.QDialog):
         self.DestinationHdr_2.setVisible(False)
         self.RoutingHdr.setVisible(False)
         self.FragmentHdr.setVisible(False)
+        #update
         self.AuthHdr.setVisible(False)
         self.ESPHdr.setVisible(False)
 

@@ -48,6 +48,8 @@
 import sys
 import shelve
 from PyQt4 import QtCore, QtGui, Qt
+from qgis.PyQt import QtGui
+
 from scapy.all import *
 import program_background
 import program_help_gui
@@ -776,6 +778,7 @@ class Main(QtGui.QMainWindow):
         self.IPv6_ExpertMode.setVisible(self.IPv6_Button_ExpertMode.isChecked())
 
     def NHConf(self):
+        """The function will show only the selected catogary and will hide the other widges """
         self.tab_NH_ICMP.setVisible(False)
         self.NH_TCP.setVisible(False)
         self.NH_UDP.setVisible(False)
@@ -876,7 +879,7 @@ class Main(QtGui.QMainWindow):
             item.setFlags(Qt.Qt.ItemIsSelectable | Qt.Qt.ItemIsEnabled )
             item.setTextAlignment(Qt.Qt.AlignHCenter | Qt.Qt.AlignVCenter)
             #self.IPv6.ExtHdr.append(['','','',''])
-            #Update
+            #Update : extended ExHdr[] to 7 to be able to pass all the values from AH or ESP
             self.IPv6.ExtHdr.append(['', '', '', '', '', '', ''])
 
         self.setEnabled(True)
@@ -1023,6 +1026,7 @@ Then you can change the whole extension header or only the values of your extens
         self.IPv6.PTB = db['PTB']
         self.IPv6.TCP_UDP = db['TCP_UDP']
         self.IPv6.Payload = db['Payload']
+
 
         if self.IPv6.EthHdr['LLDstAddr'] == None: self.LLDstAddr.setText('ff:ff:ff:ff:ff:ff')
         else: self.LLDstAddr.setText(str(self.IPv6.EthHdr['LLDstAddr']))
@@ -1180,7 +1184,12 @@ Then you can change the whole extension header or only the values of your extens
     def slotClipboard(self):
         """This function starts the process of save a packet to clipboard.
 """
-        self.creatIPv6(2, '')
+        #Update
+        try:
+            self.creatIPv6(2, '')
+        except Exception:
+            QtGui.QMessageBox.warning(None, 'Error in the Packet','Please Check the Packet values')
+
 
     def slotClose(self):
         """This function close the main window of the GUI.
